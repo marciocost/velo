@@ -1,27 +1,27 @@
 import { Page, expect } from '@playwright/test'
 
-type OrderStatus = 'APROVADO' | 'REPROVADO' | 'EM_ANALISE'
+export type OrderStatus = 'APROVADO' | 'REPROVADO' | 'EM_ANALISE'
 
 export type OrderDetails = {
   number: string
   status: OrderStatus
   color: string
   wheels: string
-  customer: { name: string, email: string }
+  customer: { name: string; email: string }
   payment: string
 }
 
-export function createOrderLockupActions(page: Page) {
+export function createOrderLookupActions(page: Page) {
 
   const orderInput = page.getByRole('textbox', { name: 'Número do Pedido' })
   const searchButton = page.getByRole('button', { name: 'Buscar Pedido' })
 
   return {
- 
-  elements: {
-   orderInput,
-   searchButton
-},
+
+    elements: {
+      orderInput,
+      searchButton
+    },
 
     async open() {
       await page.goto('/')
