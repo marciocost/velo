@@ -1,11 +1,47 @@
 import { db } from './database'
 import { OrderTable } from './schema'
 
-export async function insertOrder(order: OrderTable) {
+import { OrderDetails } from '../actions/orderLookupActions'
+
+import crypto from 'crypto'
+import { ValueListNode } from 'kysely'
+
+export function normalizeValue(value: string) {
+    if (!value) return ';'
+
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '')
+        .toLowerCase();
+}
+export async function insertOrder(order: OrderDetails) {
+
+    const data: OrderTable = {
+        id: crypto.randomUUID(),
+        order_number: order.number,
+        color: order.color.toLowerCase().replace(' ', '-'),
+        wheel_type: order.wheels.replace(' Wheels', '').toLowerCase(),
+        customer_name: order.customer.name,
+        customer_email: order.customer.email,
+        customer_phone: order.customer.phone,
+        customer_cpf: order.customer.document,
+        payment_method: normalizeValue(order.payment),
+        total_price: order.total_price,
+        status: order.status,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        optionals: []
+    }
+
     // If the record exists it might throw a duplicate error, but we manage teardown.
-    await db.insertInto('orders').values(order).execute()
+    await db.insertInto('orders').values(data).execute()
 }
 
 export async function deleteOrderByNumber(orderNumber: string) {
     await db.deleteFrom('orders').where('order_number', '=', orderNumber).execute()
+}
+
+export async function deleteOrderBydocument(document: string) {
+    await db.deleteFrom('orders').where('customer_cpf', '=', document).execute()
 }
