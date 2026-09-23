@@ -1,4 +1,4 @@
-import { test } from '../support/fixtures'
+import { test } from '../support/fixtures/fixtures'
 
 test.describe('Configuração do Veículo', () => {
   test.beforeEach(async ({ app }) => {

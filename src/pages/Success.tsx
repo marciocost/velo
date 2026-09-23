@@ -86,7 +86,7 @@ const Success = () => {
           >
             {isApproved && 'Pedido Aprovado!'}
             {isAnalysis && 'Pedido em Análise!'}
-            {isRejected && 'Crédito Reprovado'}
+            {isRejected && 'Pedido Reprovado!'}
           </h1>
           <p className="text-muted-foreground">
             {isApproved && 'Seu pedido foi processado com sucesso. Em breve entraremos em contato.'}

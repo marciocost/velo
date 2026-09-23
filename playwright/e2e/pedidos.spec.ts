@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures'
-import { generateOrderCode } from '../support/helpers'
+import { test, expect } from '../support/fixtures/fixtures'
+import { generateOrderCode } from '../support/fixtures/helpers'
 import type { OrderDetails } from '../support/actions/orderLookupActions'
 import { insertOrder, deleteOrderByNumber } from '../support/database/orderRepository'
 
