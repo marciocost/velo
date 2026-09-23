@@ -132,7 +132,7 @@ test.describe('Checkout', () => {
   test.describe('Pagamento e Confirmação', () => {
 
     const mockCreditScore = async (page: any, score: number) => {
-      await page.route('**/functions/v1/credit-analysis', async route => {
+      await page.route('**/functions/v1/credit-analysis', async (route: { fulfill: (arg0: { status: number; contentType: string; body: string }) => any }) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
