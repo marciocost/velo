@@ -36,7 +36,7 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('')`. */
     // baseURL: 'http://localhost:3000',
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'https://velo-marciocost.vercel.app',
+    baseURL: 'https://velo-g9yi411gt-marcio-costa1.vercel.app',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on',
