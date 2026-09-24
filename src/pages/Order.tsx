@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import InputMaskLib from 'react-input-mask';
-const InputMask = InputMaskLib as any;
+import InputMask from 'react-input-mask';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';

@@ -19,22 +19,21 @@ test.describe('Checkout', () => {
     })
 
 
-    test('deve validar obrigatoriedade de todos os campos em branco', async ({ app }) => {
+    test('deve validar obrigatoriedade de todos os campos em branco', async ({ app, page }) => {
 
       await app.checkout.submit()
 
-
-      await expect(alerts.name).toHaveText('Nome deve ter pelo menos 2 caracteres')
-      await expect(alerts.lastname).toHaveText('Sobrenome deve ter pelo menos 2 caracteres')
-      await expect(alerts.email).toHaveText('Email inválido')
-      await expect(alerts.phone).toHaveText('Telefone inválido')
-      await expect(alerts.document).toHaveText('CPF inválido')
-      await expect(alerts.store).toHaveText('Selecione uma loja')
-      await expect(alerts.terms).toHaveText('Aceite os termos')
+      await expect(page.getByText('Nome deve ter pelo menos 2 caracteres', { exact: true })).toBeVisible()
+      await expect(page.getByText('Sobrenome deve ter pelo menos 2 caracteres', { exact: true })).toBeVisible()
+      await expect(page.getByText('Email inválido', { exact: true })).toBeVisible()
+      await expect(page.getByText('Telefone inválido', { exact: true })).toBeVisible()
+      await expect(page.getByText('CPF inválido', { exact: true })).toBeVisible()
+      await expect(page.getByTestId('error-store')).toHaveText('Selecione uma loja')
+      await expect(page.getByText('Aceite os termos', { exact: true })).toBeVisible()
     })
 
 
-    test('deve validar limite mínimo de caracteres para Nome e Sobrenome', async ({ app }) => {
+    test('deve validar limite mínimo de caracteres para Nome e Sobrenome', async ({ app, page }) => {
 
       const customer = {
         name: 'A',
@@ -43,7 +42,6 @@ test.describe('Checkout', () => {
         document: '00000014141',
         phone: '(11) 99999-9999'
       }
-
 
       // Arrange
       await app.checkout.fillCustomerData(customer)
@@ -54,11 +52,17 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(alerts.name).toHaveText('Nome deve ter pelo menos 2 caracteres')
-      await expect(alerts.lastname).toHaveText('Sobrenome deve ter pelo menos 2 caracteres')
+      await expect(
+        page.getByText('Nome deve ter pelo menos 2 caracteres', { exact: true })
+      ).toBeVisible()
+
+      await expect(
+        page.getByText('Sobrenome deve ter pelo menos 2 caracteres', { exact: true })
+      ).toBeVisible()
     })
 
-    test('deve exibir erro para e-mail com formato inválido', async ({ app }) => {
+
+    test('deve exibir erro para e-mail com formato inválido', async ({ app, page }) => {
 
       const customer = {
         name: 'Marcio',
@@ -68,31 +72,6 @@ test.describe('Checkout', () => {
         phone: '(11) 99999-9999'
       }
 
-
-      // Arrange
-      await app.checkout.fillCustomerData(customer)
-      await app.checkout.selectStore('Velô Paulista')
-      await app.checkout.acceptTerms()
-
-      // Act
-      await app.checkout.submit()
-
-
-      // Assert
-      await expect(alerts.email).toHaveText('Email inválido')
-    })
-
-    test('deve exibir erro para CPF inválido', async ({ app }) => {
-
-      const customer = {
-        name: 'A',
-        lastname: 'B',
-        email: 'marcio@teste.com',
-        document: '00000014199',
-        phone: '(11) 99999-9999'
-      }
-
-
       // Arrange
       await app.checkout.fillCustomerData(customer)
       await app.checkout.selectStore('Velô Paulista')
@@ -102,10 +81,13 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(alerts.document).toHaveText('CPF inválido')
+      await expect(
+        page.getByText('Email inválido', { exact: true })
+      ).toBeVisible()
     })
 
-    test('deve exigir o aceite dos termos ao finalizar com dados válidos', async ({ app }) => {
+
+    test('deve exibir erro para CPF inválido', async ({ app, page }) => {
 
       const customer = {
         name: 'A',
@@ -115,6 +97,30 @@ test.describe('Checkout', () => {
         phone: '(11) 99999-9999'
       }
 
+      // Arrange
+      await app.checkout.fillCustomerData(customer)
+      await app.checkout.selectStore('Velô Paulista')
+      await app.checkout.acceptTerms()
+
+      // Act
+      await app.checkout.submit()
+
+      // Assert
+      await expect(
+        page.getByText('CPF inválido', { exact: true })
+      ).toBeVisible()
+    })
+
+
+    test('deve exigir o aceite dos termos ao finalizar com dados válidos', async ({ app, page }) => {
+
+      const customer = {
+        name: 'A',
+        lastname: 'B',
+        email: 'marcio@teste.com',
+        document: '00000014199',
+        phone: '(11) 99999-9999'
+      }
 
       // Arrange
       await app.checkout.fillCustomerData(customer)
@@ -126,8 +132,11 @@ test.describe('Checkout', () => {
       await app.checkout.submit()
 
       // Assert
-      await expect(alerts.terms).toHaveText('Aceite os termos')
+      await expect(
+        page.getByText('Aceite os termos', { exact: true })
+      ).toBeVisible()
     })
+
   })
 
   test.describe('Pagamento e Confirmação', () => {
