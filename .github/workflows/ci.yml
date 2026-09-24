@@ -82,10 +82,10 @@ jobs:
 
       # 8. Realiza o deploy Preview
       - name: Deploy Preview
-  id: deploy
-  run: |
-    URL=$(yarn vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN)
-    echo "DEPLOYMENT_URL=$URL" >> "$GITHUB_OUTPUT"
+        id: deploy
+        run: |
+          URL=$(yarn vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN)
+          echo "DEPLOYMENT_URL=$URL" >> "$GITHUB_OUTPUT"
 
   e2e-tests:
     name: Run E2E Tests
