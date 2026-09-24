@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import InputMask from 'react-input-mask';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import InputMaskLib from 'react-input-mask';
+const InputMask = InputMaskLib as any;
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
@@ -27,6 +29,7 @@ import {
 } from '@/store/configuratorStore';
 import { createOrder } from '@/hooks/useOrders';
 import { supabase } from '@/integrations/supabase/client';
+import { onlyDigits, isValidCpf, isValidEmailStrict } from '@/lib/validators';
 
 import logo from '@/assets/brand.svg';
 import glacierBlueAero from '@/assets/glacier-blue-aero-wheels.png';
@@ -58,33 +61,6 @@ const stores = [
   'Velô Ibirapuera - Av. Ibirapuera, 3000',
 ];
 
-const onlyDigits = (value: string): string => value.replace(/\D/g, '');
-
-const isValidCpf = (value: string): boolean => {
-  const cpf = onlyDigits(value);
-  if (cpf.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(cpf)) return false;
-
-  const calcDigit = (base: string, factor: number): number => {
-    let total = 0;
-    for (let i = 0; i < base.length; i++) {
-      total += Number(base[i]) * (factor - i);
-    }
-    const mod = total % 11;
-    return mod < 2 ? 0 : 11 - mod;
-  };
-
-  const d1 = calcDigit(cpf.slice(0, 9), 10);
-  const d2 = calcDigit(cpf.slice(0, 10), 11);
-  return cpf.endsWith(`${d1}${d2}`);
-};
-
-const isValidEmailStrict = (value: string): boolean => {
-  const email = value.trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
-  if (email.includes('@.') || email.includes('..')) return false;
-  return true;
-};
 
 const orderSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -129,7 +105,7 @@ const Order = () => {
   });
 
   const totalPrice = calculateTotalPrice(configuration);
-  
+
   // Cálculo dinâmico das parcelas baseado no valor da entrada
   // Parcela = (Total - Entrada) / 12 * 1.02
   const amountToFinance = Math.max(0, totalPrice - entryValue);
@@ -217,8 +193,8 @@ const Order = () => {
       }
     }
 
-    const finalPrice = paymentMethod === 'financiamento' 
-      ? (entryValue + totalFinanced) 
+    const finalPrice = paymentMethod === 'financiamento'
+      ? (entryValue + totalFinanced)
       : totalPrice;
 
     const optionalsSanitized = (
@@ -305,7 +281,7 @@ const Order = () => {
                       onChange={(e) => handleChange('name', e.target.value)}
                       className={cn(errors.name && 'border-destructive')}
                     />
-                    {errors.name && <p data-testid="checkout-error-name" className="text-sm text-destructive">{errors.name}</p>}
+                    {errors.name && <p data-testid="error-name" className="text-sm text-destructive">{errors.name}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastname">Sobrenome</Label>
@@ -316,7 +292,7 @@ const Order = () => {
                       onChange={(e) => handleChange('lastname', e.target.value)}
                       className={cn(errors.lastname && 'border-destructive')}
                     />
-                    {errors.lastname && <p data-testid="checkout-error-lastname" className="text-sm text-destructive">{errors.lastname}</p>}
+                    {errors.lastname && <p data-testid="error-lastname" className="text-sm text-destructive">{errors.lastname}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -328,7 +304,7 @@ const Order = () => {
                       onChange={(e) => handleChange('email', e.target.value)}
                       className={cn(errors.email && 'border-destructive')}
                     />
-                    {errors.email && <p data-testid="checkout-error-email" className="text-sm text-destructive">{errors.email}</p>}
+                    {errors.email && <p data-testid="error-email" className="text-sm text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
@@ -346,7 +322,7 @@ const Order = () => {
                         />
                       )}
                     </InputMask>
-                    {errors.phone && <p data-testid="checkout-error-phone" className="text-sm text-destructive">{errors.phone}</p>}
+                    {errors.phone && <p data-testid="error-phone" className="text-sm text-destructive">{errors.phone}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="document">CPF</Label>
@@ -364,7 +340,7 @@ const Order = () => {
                         />
                       )}
                     </InputMask>
-                    {errors.document && <p data-testid="checkout-error-document" className="text-sm text-destructive">{errors.document}</p>}
+                    {errors.document && <p data-testid="error-document" className="text-sm text-destructive">{errors.document}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="store">Loja para Retirada</Label>
@@ -387,7 +363,7 @@ const Order = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.store && <p data-testid="checkout-error-store" className="text-sm text-destructive">{errors.store}</p>}
+                    {errors.store && <p data-testid="error-store" className="text-sm text-destructive">{errors.store}</p>}
                   </div>
                 </div>
               </section>
@@ -495,7 +471,7 @@ const Order = () => {
                         Política de Privacidade
                       </Link>
                     </Label>
-                    {errors.terms && <p data-testid="checkout-error-terms" className="text-sm text-destructive mt-1">{errors.terms}</p>}
+                    {errors.terms && <p data-testid="error-terms" className="text-sm text-destructive mt-1">{errors.terms}</p>}
                   </div>
                 </div>
               </section>
