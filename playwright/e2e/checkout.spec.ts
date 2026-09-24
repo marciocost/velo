@@ -1,19 +1,19 @@
-import { test, expect } from '../support/fixtures/fixtures'
+import { test, expect } from '../support/fixtures/fixtures.ts'
 
 import { deleteOrderByEmail } from '../support/database/orderRepository'
 
 test.describe('Checkout', () => {
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/order')
-    await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
-  })
 
-  test.describe('validações de campos obrigatórios', () => {
+
+  test.describe('Validações de campos obrigatórios', () => {
 
     let alerts: any
 
-    test.beforeEach(async ({ app }) => {
+    test.beforeEach(async ({ page, app }) => {
+      await page.goto('/order')
+      await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
+
       alerts = app.checkout.elements.alerts
     })
 
@@ -22,7 +22,7 @@ test.describe('Checkout', () => {
 
       await app.checkout.submit()
 
-      // Assert
+
       await expect(alerts.name).toHaveText('Nome deve ter pelo menos 2 caracteres')
       await expect(alerts.lastname).toHaveText('Sobrenome deve ter pelo menos 2 caracteres')
       await expect(alerts.email).toHaveText('Email inválido')
@@ -276,7 +276,7 @@ test.describe('Checkout', () => {
       await app.checkout.expectResult('Pedido Aprovado!')
     })
 
-    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada mair que 50%', async ({ app }) => {
+    test('deve aprovar o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada maior que 50%', async ({ app }) => {
 
       const customer = {
         name: 'Praca',

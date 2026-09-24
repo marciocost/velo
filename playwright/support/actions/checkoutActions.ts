@@ -22,7 +22,7 @@ export function createCheckoutActions(page: Page) {
     },
 
     async expectLoaded() {
-      await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Confirmar Pedido' })).toBeVisible()
     },
 
     async expectSummaryTotal(price: string) {
