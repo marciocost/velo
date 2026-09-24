@@ -46,6 +46,8 @@ jobs:
     name: Build & Deploy Vercel Preview
     needs: unit-tests
     runs-on: ubuntu-latest
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
 
     steps:
       # 1. Faz o checkout do código-fonte do repositório
@@ -80,4 +82,54 @@ jobs:
 
       # 8. Realiza o deploy Preview
       - name: Deploy Preview
-        run: yarn vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN
+        id: deploy
+        run: |
+        URL=$(yarn vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN)
+        echo "DEPLOYMENT_URL=$URL" >> $GITHUB_OUTPUT
+
+  e2e-tests:
+    name: Run E2E Tests
+    needs: [build-and-deploy]
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Faz o checkout do código-fonte do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura a versão do Node.js utilizada pelo projeto
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Habilita o Corepack para gerenciamento do Yarn
+      - name: Enable Corepack
+        run: corepack enable
+
+      # 4. Instala as dependências definidas no yarn.lock
+      - name: Install dependencies
+        run: yarn install
+
+      # 5. Instalação do Chromium
+      - name: Install Playwright Browser
+        run: yarn playwright install --with-deps chromium
+
+      # 6. Execução dos testes de regressão
+      - name: Run E2E regression tests
+        run: yarn playwright test playwright/e2e/online.spec.ts
+        env:
+          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
+
+      # 7. Relatório de Testes Automatizados
+      - name: Upload Playwright report
+        if: ${{ !cancelled()}}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: playwright-report
+          path: playwright-report
+          
+        
+
+        
+
