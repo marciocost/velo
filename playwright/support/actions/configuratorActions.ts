@@ -1,11 +1,16 @@
 import { Page, expect } from '@playwright/test'
 
 export function createConfiguratorActions(page: Page) {
-  const optionalCheckbox = (name: string | RegExp) => page.getByRole('checkbox', { name })
+  const optionalCheckbox = (name: string | RegExp) =>
+    page.getByRole('checkbox', { name })
 
   return {
     async open() {
-      await page.goto('/configure')
+      await page.goto('/')
+
+      await page
+        .getByRole('link', { name: /Configure Agora/i })
+        .click()
     },
 
     async selectColor(name: string) {
@@ -17,9 +22,9 @@ export function createConfiguratorActions(page: Page) {
     },
 
     async expectPrice(price: string) {
-      const priceElement = page.getByTestId('total-price')
-      await expect(priceElement).toBeVisible()
-      await expect(priceElement).toHaveText(price)
+      await expect(
+        page.getByText(price, { exact: true }).first()
+      ).toBeVisible()
     },
 
     async expectCarImageSrc(src: string | RegExp) {

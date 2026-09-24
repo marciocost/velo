@@ -10,9 +10,10 @@ test.describe('Checkout', () => {
 
     let alerts: any
 
-    test.beforeEach(async ({ page, app }) => {
-      await page.goto('/order')
-      await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
+    test.beforeEach(async ({ app }) => {
+      await app.hero.open()
+      await app.configurator.finishConfigurator()
+      await app.checkout.expectLoaded()
 
       alerts = app.checkout.elements.alerts
     })
@@ -347,4 +348,3 @@ test.describe('Checkout', () => {
     })
   })
 })
-
