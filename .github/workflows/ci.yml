@@ -1,4 +1,4 @@
-# Workflow de Integração Contínua com testes unitários e deploy Preview na Vercel.
+# Workflow de Integração Contínua com testes unitários, deploy Preview na Vercel e testes E2E.
 # Estrutura preparada para inclusão futura de novos jobs e etapas de validação.
 
 name: Continuous Integration
@@ -47,8 +47,9 @@ jobs:
     name: Build & Deploy Vercel Preview
     needs: unit-tests
     runs-on: ubuntu-latest
+
     outputs:
-      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
 
     steps:
       # 1. Faz o checkout do código-fonte do repositório
@@ -81,16 +82,17 @@ jobs:
       - name: Vercel Build
         run: yarn vercel build --token=$VERCEL_TOKEN
 
-      # 8. Realiza o deploy Preview
+      # 8. Realiza o deploy Preview e captura a URL gerada
       - name: Deploy Preview
         id: deploy
         run: |
           URL=$(yarn --silent vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN)
-          echo "DEPLOYMENT_URL=$URL" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Preview deployed at: $URL"
 
   e2e-tests:
     name: Run E2E Tests
-    needs: [build-and-deploy]
+    needs: build-and-deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -112,24 +114,29 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      # 5. Instalação do Chromium
+      # 5. Instala o Chromium utilizado pelo Playwright
       - name: Install Playwright Browser
         run: yarn playwright install --with-deps chromium
 
-      # 6. Execução dos testes de regressão
-      - name: Run E2E regression tests
-        run: yarn playwright test playwright/e2e/online.spec.ts
+      # 6. Exibe a URL que será utilizada pelos testes E2E
+      - name: Show E2E target URL
+        run: echo "Running E2E tests against $BASE_URL"
         env:
-          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
+          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment_url }}
 
-      # 7. Relatório de Testes Automatizados
+      # 7. Executa os testes E2E contra o Preview da Vercel
+      - name: Run E2E regression tests
+        run: yarn playwright test
+        env:
+          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment_url }}
+
+      # 8. Publica o relatório do Playwright
       - name: Upload Playwright report
-        if: ${{ !cancelled()}}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.1
         with:
           name: playwright-report
           path: playwright-report
-          
         
 
         
