@@ -9,8 +9,8 @@ on:
       - main
 
 env:
-  NODE_VERSION: '24'
-  VERCEL_TOKEN: vcp_1bbCQg9UJQpMBhVFjzAT1ZFfUDMjXgDuoViQaFpvlCmZRzuxVZ1I3fLxbuild
+  NODE_VERSION: '20'
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_SCOPE: marcio-costa1
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
     steps:
       # 1. Faz o checkout do código-fonte do repositório
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       # 2. Configura a versão do Node.js utilizada pelo projeto
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -49,11 +49,11 @@ jobs:
     steps:
       # 1. Faz o checkout do código-fonte do repositório
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       # 2. Configura a versão do Node.js utilizada pelo projeto
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -67,7 +67,7 @@ jobs:
 
       # 5. Build para o Vercel
       - name: Vercel Build
-        run: yarn vercel --token=$VERCEL_TOKEN
+        run: yarn vercel build --token=$VERCEL_TOKEN
 
       # 6. Deploy preview no Vercel
       - name: Deploy Preview
