@@ -30,5 +30,18 @@ dist-ssr
 /playwright/.cache/
 /playwright/.auth/
 
+
+
 .vercel
 .env*
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Configurações locais do Supabase
+supabase/.temp/
+
+# Configurações locais da Vercel
+.vercel/
