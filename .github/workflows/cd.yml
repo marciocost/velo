@@ -1,11 +1,50 @@
-          URL=$(yarn --silent vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE)
-          echo "deployment_url=$URL" >> "$GITHUB_OUTPUT"
-          echo "Preview deployed at: $URL"
+# Pipeline com testes unitários, Preview isolado, testes E2E e deploy de produção.
+name: Continuous Deployment
 
-  e2e-tests:
-    name: Run E2E Tests
-    needs: build-and-deploy
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '24'
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_SCOPE: marcio-costa1
+  PREVIEW_SUPABASE_PROJECT_ID: htqzbjfjpvfossfrjtao
+  PRODUCTION_SUPABASE_PROJECT_ID: syiwyoifcalpenetbqzn
+
+jobs:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
+    steps:
+      # Faz o checkout do código-fonte.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      # Executa os testes unitários.
+      - name: Run unit tests
+        run: yarn test
+
+  build-and-deploy:
+    name: Build & Deploy Vercel Preview
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
 
     steps:
       - name: Checkout repository
@@ -22,99 +61,36 @@
       - name: Install dependencies
         run: yarn install
 
-      - name: Install Playwright Browser
-        run: yarn playwright install --with-deps chromium
+      - name: Verify Vercel authentication
+        run: yarn vercel whoami --token=$VERCEL_TOKEN
 
-      # Mostra a URL da Vercel Preview que os testes acessarão.
-      - name: Show E2E target URL
-        run: echo "Running E2E tests against $BASE_URL"
-        env:
-          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment_url }}
+      # Obtém as configurações do ambiente Preview.
+      - name: Vercel Pull
+        run: yarn vercel pull --yes --environment=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
 
-      # Valida o destino PostgreSQL sem exibir a senha do banco.
-      - name: Validate E2E Database Target
-        env:
-          DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
-        run: |
-          node <<'NODE'
-          const ref = process.env.PREVIEW_SUPABASE_PROJECT_ID
-          const rawUrl = process.env.DATABASE_URL
-          if (!rawUrl) throw new Error('O secret PREVIEW_DATABASE_URL não foi configurado!')
-
-          const connection = new URL(rawUrl)
-          const direct =
-            connection.hostname === `db.${ref}.supabase.co` &&
-            connection.username === 'postgres'
-          const pooler =
-            connection.hostname.endsWith('.pooler.supabase.com') &&
-            connection.username === `postgres.${ref}`
-
-          if (!['postgres:', 'postgresql:'].includes(connection.protocol) || (!direct && !pooler)) {
-            throw new Error('Conexão bloqueada: DATABASE_URL não pertence ao Supabase Preview!')
-          }
-          console.log('Destino do banco E2E validado: Supabase Preview.')
-          NODE
-
-      # Executa os testes contra a aplicação e o banco Preview.
-      - name: Run E2E regression tests
-        run: yarn playwright test
-        env:
-          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment_url }}
-          DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
-
-      - name: Upload Playwright report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: playwright-report
-          path: playwright-report
-
-  deploy-production:
-    name: Deploy Production
-    needs: e2e-tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: yarn install
-
-      # Obtém exclusivamente as configurações de produção.
-      - name: Pull Production Config
-        run: yarn vercel pull --yes --environment=production --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
-
-      # Bloqueia o deploy caso o build não esteja configurado para o Supabase de produção.
-      - name: Validate Production Supabase
+      # Interrompe o pipeline se o Preview apontar para outro Supabase.
+      - name: Validate Preview Supabase
         run: |
           node <<'NODE'
           const fs = require('node:fs')
           const { parseEnv } = require('node:util')
-          const vars = parseEnv(fs.readFileSync('.vercel/.env.production.local', 'utf8'))
-          const ref = process.env.PRODUCTION_SUPABASE_PROJECT_ID
+          const vars = parseEnv(fs.readFileSync('.vercel/.env.preview.local', 'utf8'))
+          const ref = process.env.PREVIEW_SUPABASE_PROJECT_ID
           if (
-            vars.VITE_SUPABASE_PROJECT_ID !== ref ||
             vars.VITE_SUPABASE_URL !== `https://${ref}.supabase.co` ||
+            vars.VITE_SUPABASE_PROJECT_ID !== ref ||
             !vars.VITE_SUPABASE_PUBLISHABLE_KEY
           ) {
-            throw new Error('Conexão bloqueada! Production não aponta para o Supabase oficial.')
+            throw new Error('As variáveis de Preview não apontam para o Supabase Preview!')
           }
-          console.log('Supabase Production validado.')
+          console.log('Supabase Preview validado.')
           NODE
 
-      # Gera um novo build com as variáveis de Production.
-      - name: Build Production
-        run: yarn vercel build --prod --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+      # Compila o frontend com as variáveis de Preview.
+      - name: Vercel Build
+        run: yarn vercel build --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
 
-      # Publica em produção somente se os E2E passarem.
-      - name: Deploy Production
-        run: yarn vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+      # Publica o Preview e fornece a URL aos testes E2E.
+      - name: Deploy Preview
+        id: deploy
+        run: |
