@@ -92,7 +92,7 @@ jobs:
         run: yarn vercel build --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
 
       # Publica o Preview e disponibiliza a URL para os testes E2E.
-       - name: Deploy Preview
+      - name: Deploy Preview
         id: deploy
         run: |
           URL=$(yarn --silent vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE)
